@@ -1,0 +1,14 @@
+{
+  "id": "io.github.theo78825.tvtools",
+  "version": "1.0.0",
+  "vendor": "theo78825",
+  "type": "web",
+  "main": "index.html",
+  "title": "TV Tools",
+  "icon": "icon.png",
+  "largeIcon": "largeIcon.png",
+  "iconColor": "#b0ce0a",
+  "resolution": "1920x1080",
+  "disableBackHistoryAPI": true,
+  "noSplashOnLaunch": true
+}

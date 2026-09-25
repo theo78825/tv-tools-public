@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Home</title>
+<script src="view.js"></script>
+<style>
+  :root {
+    --bg: #0d0d10;
+    --panel: #1c1c21;
+    --text: #f2f2f4;
+    --muted: #9a9aa6;
+    --focus: #ffffff;
+    --accent: #b0ce0a;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    width: 1920px;
+    height: 1080px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "LG Smart UI", "Museo Sans", "Helvetica Neue", Arial, sans-serif;
+    overflow: hidden;
+  }
+  button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    outline: none;
+  }
+
+  /* Top bar */
+  #bar {
+    position: absolute;
+    top: 48px;
+    left: 96px;
+    right: 96px;
+    height: 88px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+  #clock { flex: 1; display: flex; align-items: baseline; gap: 24px; }
+  #time { font-size: 60px; font-weight: 600; }
+  #date { font-size: 30px; color: var(--muted); }
+  .pill {
+    font-size: 30px;
+    font-weight: 600;
+    background: var(--panel);
+    border: 4px solid transparent;
+    border-radius: 999px;
+    padding: 16px 40px;
+    transition: transform 120ms ease, background 120ms ease;
+  }
+  .pill:focus { border-color: var(--focus); background: #2c2c33; transform: scale(1.06); }
+
+  /* Scrolling content */
+  #main {
+    position: absolute;
+    top: 160px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 24px 96px 96px;
+    overflow: hidden; /* scrolled from home.js */
+  }
+  h2 {
+    font-size: 30px;
+    font-weight: 600;
+    color: var(--muted);
+    margin: 0 0 24px;
+  }
+
+  .tile {
+    display: block;
+    text-align: center;
+    border-radius: 24px;
+    scroll-margin: 60px 0;
+  }
+  .tile .face {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 24px;
+    overflow: hidden;
+    transition: transform 140ms ease, box-shadow 140ms ease;
+  }
+  .tile img { max-width: 78%; max-height: 78%; object-fit: contain; }
+  .tile .initial { font-size: 64px; font-weight: 700; opacity: 0.8; }
+  .tile .name {
+    display: block;
+    margin-top: 14px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* Focus ring sits outside the tile, so every tile keeps its full size and
+     24px corners; no border is reserved inside it. */
+  .tile:focus .face {
+    transform: scale(1.07);
+    box-shadow: 0 0 0 5px var(--focus), 0 18px 48px rgba(0, 0, 0, 0.6);
+  }
+  .tile:focus .name { color: var(--text); }
+  /* Dark app tiles get a faint ring right on their edge so their shape shows
+     on the dark page, matching the other tiles' size and corners. */
+  .tile.dark .face { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.18); }
+  .tile.dark:focus .face {
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.18), 0 0 0 5px var(--focus), 0 18px 48px rgba(0, 0, 0, 0.6);
+  }
+  .tile.launching .face { opacity: 0.6; }
+
+  /* Moving a tile */
+  h2 .hint { font-size: 24px; font-weight: 400; margin-left: 24px; opacity: 0.7; }
+  .arranging .hint { visibility: hidden; }
+  .tile.lifted .face,
+  .tile.lifted:focus .face {
+    transform: scale(1.12) translateY(-8px);
+    box-shadow: 0 0 0 6px var(--accent), 0 26px 60px rgba(0, 0, 0, 0.75);
+  }
+  .tile.lifted .name { color: var(--accent); }
+  .arranging .tile:not(.lifted) .face { opacity: 0.55; }
+  #moving {
+    position: absolute;
+    left: 50%;
+    bottom: 40px;
+    transform: translateX(-50%);
+    display: none;
+    font-size: 30px;
+    background: #202027;
+    border: 3px solid var(--accent);
+    border-radius: 999px;
+    padding: 18px 44px;
+    white-space: nowrap;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  }
+  #moving b { color: var(--accent); }
+  .arranging #moving { display: block; }
+
+  /* Hidden apps */
+  .tile.is-hidden .face { opacity: 0.4; }
+  .tile.is-hidden .name::after { content: " \00b7  hidden"; color: var(--muted); }
+  .tile.toggle-hidden .face {
+    background: #1c1c21;
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.18);
+    font-size: 44px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .tile.toggle-hidden:focus .face {
+    color: var(--text);
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.18), 0 0 0 5px var(--focus), 0 18px 48px rgba(0, 0, 0, 0.6);
+  }
+
+  /* Tile menu and rename dialog */
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.7);
+  }
+  .overlay.open { display: flex; }
+  .overlay .box {
+    min-width: 720px;
+    background: var(--panel);
+    border-radius: 36px;
+    padding: 52px 60px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+  }
+  .overlay h3 { font-size: 46px; margin: 0 0 32px; }
+  #menu-actions { display: flex; flex-direction: column; gap: 18px; }
+  .menu-item { text-align: left; font-size: 34px; padding: 20px 40px; }
+  #rename-input {
+    display: block;
+    width: 100%;
+    font: inherit;
+    font-size: 40px;
+    color: var(--text);
+    background: #0f0f12;
+    border: 4px solid #3a3a44;
+    border-radius: 20px;
+    padding: 18px 26px;
+    outline: none;
+  }
+  #rename-input:focus { border-color: var(--accent); }
+  .overlay .small { font-size: 26px; color: var(--muted); margin: 18px 0 36px; }
+  .overlay .small b { color: var(--text); font-weight: 600; }
+  .overlay .actions { display: flex; gap: 24px; }
+
+  /* Large first row */
+  #top {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 36px;
+    margin-bottom: 56px;
+  }
+  #top .face { height: 196px; }
+  #top img { max-height: 70%; }
+  #top .name { font-size: 30px; }
+
+  /* Smaller grid for everything else */
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 36px 28px;
+  }
+  #grid .face { height: 124px; }
+  #grid .initial { font-size: 44px; }
+  #grid .name { font-size: 24px; margin-top: 10px; }
+
+  #error {
+    position: absolute;
+    left: 96px;
+    right: 96px;
+    bottom: 32px;
+    font-size: 28px;
+    color: #e5484d;
+    margin: 0;
+  }
+</style>
+</head>
+<body>
+<header id="bar">
+  <div id="clock"><span id="time"></span><span id="date"></span></div>
+  <button class="pill" data-nav data-launch="com.webos.app.homeconnect">Inputs</button>
+  <button class="pill" data-nav data-launch="com.palm.app.settings">Settings</button>
+  <button class="pill" data-nav data-launch="com.webos.app.home">LG Home</button>
+</header>
+<main id="main">
+  <section id="top"></section>
+  <h2>All apps <span class="hint">Hold OK on an app to move, rename or hide it</span></h2>
+  <section id="grid"></section>
+</main>
+<p id="error"></p>
+<div id="moving">Moving <b></b> &middot; arrows to move &middot; OK to drop &middot; Back to cancel</div>
+
+<div id="menu" class="overlay" role="dialog" aria-modal="true">
+  <div class="box">
+    <h3 id="menu-title"></h3>
+    <div id="menu-actions"></div>
+  </div>
+</div>
+
+<div id="rename" class="overlay" role="dialog" aria-modal="true">
+  <div class="box">
+    <h3>Rename <span id="rename-app"></span></h3>
+    <input id="rename-input" type="text" maxlength="40" autocomplete="off" spellcheck="false" data-nav>
+    <p class="small">Leave it as <b id="rename-lg"></b> or empty to use LG&rsquo;s name.</p>
+    <div class="actions">
+      <button class="pill" data-nav data-action="saveRename">Save</button>
+      <button class="pill" data-nav data-action="closeOverlay">Cancel</button>
+    </div>
+  </div>
+</div>
+<script src="home.js"></script>
+</body>
+</html>

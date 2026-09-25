@@ -1,0 +1,7 @@
+{
+  "name": "io.github.theo78825.tvtools.service",
+  "version": "1.0.0",
+  "description": "TV Tools service",
+  "main": "service.js",
+  "license": "MIT"
+}

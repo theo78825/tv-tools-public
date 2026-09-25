@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bouncing Ball Screensaver</title>
+<style>
+  /* Pure black is pixels off on an OLED; everything else here keeps moving. */
+  html, body {
+    margin: 0; width: 1920px; height: 1080px; overflow: hidden;
+    background: #000; cursor: none;
+  }
+  canvas {
+    position: absolute; left: 0; top: 0;
+    opacity: 0; transition: opacity 1200ms ease;
+  }
+  canvas.shown { opacity: 1; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script src="app.js"></script>
+</body>
+</html>

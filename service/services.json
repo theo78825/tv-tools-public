@@ -1,0 +1,7 @@
+{
+  "id": "io.github.theo78825.tvtools.service",
+  "description": "TV Tools service",
+  "services": [
+    { "name": "io.github.theo78825.tvtools.service" }
+  ]
+}

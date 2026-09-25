@@ -46,12 +46,14 @@ def tar_gz(entries: list[tuple[str, bytes | None, int]]) -> bytes:
     return gzip.compress(raw.getvalue(), mtime=MTIME)
 
 
+# Entry names have no leading "./", as in Homebrew Channel's own IPKs: the
+# webosbrew repository's checks look members up by their plain names.
 def tree(src: Path, dest: str) -> list[tuple[str, bytes | None, int]]:
-    out = [(f"./{dest}/", None, 0o755)]
+    out = [(f"{dest}/", None, 0o755)]
     for p in sorted(src.rglob("*")):
         if p.name.startswith(".") or p.name == "__pycache__":
             continue
-        rel = f"./{dest}/{p.relative_to(src).as_posix()}"
+        rel = f"{dest}/{p.relative_to(src).as_posix()}"
         if p.is_dir():
             out.append((rel + "/", None, 0o755))
         else:
@@ -61,7 +63,7 @@ def tree(src: Path, dest: str) -> list[tuple[str, bytes | None, int]]:
 
 
 def dirs(*paths: str) -> list[tuple[str, bytes | None, int]]:
-    return [(f"./{p}/", None, 0o755) for p in paths]
+    return [(f"{p}/", None, 0o755) for p in paths]
 
 
 def ar(members: list[tuple[str, bytes]]) -> bytes:
@@ -92,11 +94,11 @@ def main() -> None:
              "usr/palm/packages", f"usr/palm/packages/{APP_ID}")
         + tree(APP_DIR, f"usr/palm/applications/{APP_ID}")
         + tree(SVC_DIR, f"usr/palm/services/{SVC_ID}")
-        + [(f"./usr/palm/packages/{APP_ID}/packageinfo.json",
+        + [(f"usr/palm/packages/{APP_ID}/packageinfo.json",
             json.dumps(packageinfo, indent=2).encode(), 0o644)]
     )
     data = tar_gz(data_entries)
-    installed_kb = sum(len(d) for _, d, _ in data_entries if d) // 1024 + 1
+    installed_size = sum(len(d) for _, d, _ in data_entries if d)  # bytes, as ares-package writes it
 
     control = (
         f"Package: {APP_ID}\n"
@@ -104,13 +106,13 @@ def main() -> None:
         "Section: misc\n"
         "Priority: optional\n"
         "Architecture: all\n"
-        f"Installed-Size: {installed_kb}\n"
+        f"Installed-Size: {installed_size}\n"
         f"Maintainer: {appinfo['vendor']}\n"
         f"Description: {appinfo['title']}\n"
         "webOS-Package-Format-Version: 2\n"
         "webOS-Packager-Version: x.y.x\n"
     ).encode()
-    control_tgz = tar_gz([("./", None, 0o755), ("./control", control, 0o644)])
+    control_tgz = tar_gz([("control", control, 0o644)])
 
     DIST.mkdir(exist_ok=True)
     out = DIST / f"{APP_ID}_{VERSION}_all.ipk"

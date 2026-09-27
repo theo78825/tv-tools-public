@@ -102,7 +102,7 @@ cleanup() {
 
 	# Nothing of TV Tools left behind. The hook is only removed if it's our link.
 	[ -L "$HOOK" ] && case "$(readlink "$HOOK")" in "$SVC_DIR"/*) rm -f "$HOOK" ;; esac
-	rm -rf "$STATE" /var/lib/webosbrew/tv-tools.log
+	rm -rf "$STATE" /var/log/tv-tools.log /var/lib/webosbrew/tv-tools.log
 	for f in /tmp/tv-tools-*; do
 		[ "$f" = "$LOG" ] || [ "$f" = "$PIDFILE" ] || rm -rf "$f"
 	done

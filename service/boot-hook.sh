@@ -7,15 +7,23 @@
 # It runs each feature's boot script from the installed app, so updating the
 # app updates the boot behaviour. Each boot script does nothing unless its card
 # was used, and checks what it acts on before touching it.
-# What ran is written to LOG, replaced every boot.
+# What ran is written to LOG, replaced every boot. /var/log is RAM on webOS (a
+# link to /tmp/var/log), so the log never touches flash storage.
 
 SERVICE_DIR=/media/developer/apps/usr/palm/services/io.github.theo78825.tvtools.service
-LOG=/var/lib/webosbrew/tv-tools.log
+LOG=/var/log/tv-tools.log
 
 [ -d "$SERVICE_DIR/boot.d" ] || exit 0
 
-exec >"$LOG" 2>&1 </dev/null
+# A redirect that fails would end this script, so only log if /var/log is there.
+if [ -d /var/log/ ]; then
+	exec >"$LOG" 2>&1 </dev/null
+else
+	exec >/dev/null 2>&1 </dev/null
+fi
 echo "$(date '+%Y-%m-%d %H:%M:%S') TV Tools boot hook"
+# 1.0.0 kept this log on flash; nothing should be left there.
+rm -f /var/lib/webosbrew/tv-tools.log
 
 # /tmp is RAM, so this mark means "ran this boot" (read by features/health.js).
 date +%s > /tmp/tv-tools-boot

@@ -78,7 +78,8 @@ Every tool starts off. Nothing changes on the TV until you switch it on from its
   uninstalling TV Tools breaks it and nothing of ours runs at boot again. The
   hook runs each `service/boot.d/*.sh`. Each one does nothing unless its card
   was used, and checks its target before acting. What ran is written to
-  `/var/lib/webosbrew/tv-tools.log`, replaced every boot.
+  `/var/log/tv-tools.log`, replaced every boot. On webOS `/var/log` is in RAM,
+  so the log never touches flash storage.
 - **Uninstalling puts the TV back, with no restart.** webOS runs nothing of an
   app's when it's removed, so `service/uninstall-watch.sh` checks every 10 s that
   TV Tools is still installed. Once it has been gone for 30 s (an update removes
